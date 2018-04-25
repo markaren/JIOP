@@ -31,7 +31,7 @@ import info.laht.jiop.MLCandidate
 
 /**
  *
- * @author Lars Ivar Hatledal
+ * https://github.com/dwdyer/watchmaker/blob/master/framework/src/java/main/org/uncommons/watchmaker/framework/selection/RouletteWheelSelection.java
  */
 class RoulettewheelSelection : SelectionOperator {
 
