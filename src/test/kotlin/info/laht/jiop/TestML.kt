@@ -34,12 +34,16 @@ import info.laht.jiop.termination.IterationData
 import info.laht.jiop.testfunctions.RastriginFunction
 import info.laht.jiop.tuning.AlgorithmOptimizer
 import info.laht.jiop.tuning.Optimizable
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  *
  * @author Lars Ivar Hatledal
  */
 object TestML {
+
+    val LOG: Logger = LoggerFactory.getLogger(TestML::class.java)
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -59,32 +63,23 @@ object TestML {
                         c1 = 1.41,
                         c2 = 1.41,
                         c3 = 0.41),
-                DEAlgorithm(
-                        popSize = func.dimensionality*3,
-                        F = 0.9,
-                        CR = 0.8),
+                DEAlgorithm(),
                 GAAlgorithm(
-                        popSize = func.dimensionality*2,
-                        elitism = 0.1,
-                        selectionRate = 0.5,
-                        mutationRate = 0.1,
                         mutation = DoubleArrayMutation(0.1),
                         selection = StochasticUniversalSampling())
         )
 
-//        AlgorithmOptimizer(DEAlgorithm(), algorithms[0] as Optimizable).apply {
-//            optimize(func, 10000)
-//        }
-//        AlgorithmOptimizer(DEAlgorithm(), algorithms[2] as Optimizable).apply {
-//            optimize(func, 1000)
-//        }
+
+        AlgorithmOptimizer(DEAlgorithm(), algorithms[2] as Optimizable).apply {
+            optimize(func, timeOut = 10000)
+        }
         AlgorithmOptimizer(DEAlgorithm(), algorithms[3] as Optimizable).apply {
-            optimize(func, 10000)
+            optimize(func, timeOut = 10000)
         }
 
         for (a in algorithms) {
-            val solve = a.solve(func, TerminationCriteria.of { it.bestCost == 0.0 || it.timeElapsed > 1000 })
-            println("${a.name}: $solve")
+            val solve = a.solve(func, TerminationCriteria.of { it.bestCost == 0.0 || it.timeElapsed >= 2000 })
+            LOG.info("${a.name}: $solve")
         }
 
     }
