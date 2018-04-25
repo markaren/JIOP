@@ -23,14 +23,11 @@
  */
 package info.laht.jiop.ga
 
+import info.laht.jiop.*
 import java.util.ArrayList
-import java.util.Collections
-import info.laht.jiop.MLAlgorithm
-import info.laht.jiop.MLCandidate
-import info.laht.jiop.MLEvaluator
-import info.laht.jiop.MLResult
 import info.laht.jiop.termination.TerminationCriteria
-import info.laht.jiop.termination.TerminationData
+import info.laht.jiop.termination.IterationDataImpl
+import info.laht.jiop.tuning.Optimizable
 
 /**
  *
@@ -38,72 +35,55 @@ import info.laht.jiop.termination.TerminationData
  */
 class GAAlgorithm (
 
-        evaluator: MLEvaluator,
-        val popSize: Int = 60,
-        val elitism: Double = 0.1,
-        val selectionRate: Double = 0.5,
-        val mutationRate: Double = 0.1,
+        private var popSize: Int = 60,
+        private var elitism: Double = 0.1,
+        private var selectionRate: Double = 0.5,
+        private var mutationRate: Double = 0.1,
 
-        private var selection: SelectionOperator = RoulettewheelSelection(),
-        private var crossover: CrossoverOperator = DoubleArrayCrossover(),
-        private var mutation: MutationOperator = DoubleArrayMutation()
+        private val selection: SelectionOperator = RoulettewheelSelection(),
+        private val crossover: CrossoverOperator = DoubleArrayCrossover(),
+        private val mutation: MutationOperator = DoubleArrayMutation()
 
-) : MLAlgorithm("GA", evaluator) {
+) : MLAlgorithm("GA"), Optimizable {
 
-    private val pop: MutableList<MLCandidate> = ArrayList(popSize)
+    private lateinit var pop: MutableList<MLCandidate>
 
+    override val numberOfFreeParameters: Int = 4
 
-    class Builder(
-            private val evaluator: MLEvaluator
-    ) {
+    override fun setFreeParameters(params: DoubleArray) {
 
-        private var popSize = 60
-        private var elitism = 0.1
-        private var selectionRate = 0.5
-        private var mutationRate = 0.1
+        popSize = params[0].toInt()
+        elitism = params[1]
+        selectionRate = params[2]
+        mutationRate = params[3]
 
-
-        fun popSize(`val`: Int): Builder {
-            this.popSize = `val`
-            return this
-        }
-
-        fun elitism(`val`: Double): Builder {
-            this.elitism = `val`
-            return this
-        }
-
-        fun selectionRate(`val`: Double): Builder {
-            this.selectionRate = `val`
-            return this
-        }
-
-        fun mutationRate(`val`: Double): Builder {
-            this.mutationRate = `val`
-            return this
-        }
-
-        fun build(): GAAlgorithm {
-            return GAAlgorithm(evaluator, popSize, elitism, selectionRate, mutationRate)
-        }
     }
 
-    override fun solve(terminationCriteria: TerminationCriteria, seed: List<DoubleArray>?): MLResult {
+    override fun getParameterLimits(): List<MLRange> {
+        return listOf(
+                MLRange(10.0, 100.0), //popSize
+                MLRange(0.1, 1.0), //elitism
+                MLRange(0.1,0.8), //selectionRate
+                MLRange(0.01,0.8) //mutationRate
+        )
+    }
+
+    override fun solve(problem: Problem, terminationCriteria: TerminationCriteria): MLResult {
 
         var t: Long
         val t0 = System.currentTimeMillis()
 
         var numit = 0
 
-        generatePopulation(seed)
-        evaluateAndUpdate(pop)
-        Collections.sort(pop)
+        generatePopulation(problem.dimensionality)
+        problem.evaluateAndUpdate(pop)
+        pop.sort()
 
-        var best: MLCandidate
+        var best: MLCandidate = pop[0].copy()
 
         val numElites = Math.round(elitism * popSize).toInt()
         val numToSelect = Math.round(popSize * selectionRate).toInt()
-        val numMutations = Math.round((pop.size - numElites).toDouble() * problemDimensionality.toDouble() * this.mutationRate).toInt()
+        val numMutations = Math.round((pop.size - numElites) * problem.dimensionality * this.mutationRate).toInt()
 
         do {
 
@@ -115,25 +95,24 @@ class GAAlgorithm (
 
             mutation.mutate(pop.subList(numElites, pop.size), numMutations, random)
 
-            evaluateAndUpdate(pop)
-            Collections.sort(pop)
+            problem.evaluateAndUpdate(pop)
+            pop.sort()
 
             numit++
             t = System.currentTimeMillis() - t0
-            best = pop[0]
 
-        } while (!terminationCriteria.test(TerminationData(best.cost, numit, t)))
+            val newBest = pop[0]
+            if (best != newBest) {
+                best = newBest.copy()
+            }
 
-        return MLResult(denormalizeSolution(best), t, numit)
+        } while (!terminationCriteria.test(IterationDataImpl(best.cost, numit, t)))
+
+        return getResult(best, problem, numit, t)
     }
 
-    private fun generatePopulation(seed: List<DoubleArray>?) {
-        pop.clear()
-        if (seed != null) {
-            for (s in seed) {
-                pop.add(MLCandidate(s))
-            }
-        }
+    private fun generatePopulation(problemDimensionality: Int) {
+        pop = ArrayList(popSize)
         while (pop.size != popSize) {
             pop.add(MLCandidate.randomCandidate(problemDimensionality))
         }

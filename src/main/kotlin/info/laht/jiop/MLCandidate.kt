@@ -65,7 +65,7 @@ open class MLCandidate(
     companion object {
 
         fun randomCandidate(dof: Int): MLCandidate {
-            return MLCandidate(MLUtil.randomArrayd(dof, 0.0, 1.0))
+            return MLCandidate(randomArrayd(dof, 0.0, 1.0))
         }
     }
 

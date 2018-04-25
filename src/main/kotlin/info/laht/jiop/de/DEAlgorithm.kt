@@ -25,61 +25,54 @@ package info.laht.jiop.de
 
 import info.laht.jiop.*
 import info.laht.jiop.termination.TerminationCriteria
-import info.laht.jiop.termination.TerminationData
+import info.laht.jiop.termination.IterationDataImpl
+import info.laht.jiop.tuning.Optimizable
+import java.util.ArrayList
 
 /**
  *
  * @author Lars Ivar Hatledal
  */
 class DEAlgorithm(
-        evaluator: MLEvaluator,
-        val popSize: Int = 30,
-        val F: Double = 0.9,
-        val CR: Double = 0.8
-) : MLAlgorithm("DE", evaluator) {
+        var popSize: Int = 30,
+        var F: Double = 0.9,
+        var CR: Double = 0.8
+) : MLAlgorithm("DE"), Optimizable {
 
-    private val pop: MutableList<MLCandidate> = ArrayList(popSize)
+    private lateinit var pop: MutableList<MLCandidate>
 
-    class Builder(
-            private val evaluator: MLEvaluator
-    ) {
-        
-        private var popSize = 30
-        private var F = 0.9
-        private var CR = 0.8
 
-        fun popSize(`val`: Int): Builder {
-            this.popSize = `val`
-            return this
-        }
+    override val numberOfFreeParameters: Int = 3
 
-        fun F(`val`: Double): Builder {
-            this.F = `val`
-            return this
-        }
+    override fun setFreeParameters(params: DoubleArray) {
 
-        fun CR(`val`: Double): Builder {
-            this.CR = `val`
-            return this
-        }
+        popSize = params[0].toInt()
+        F = params[1]
+        CR = params[2]
 
-        fun build(): DEAlgorithm {
-            return DEAlgorithm(evaluator, popSize, F, CR)
-        }
     }
 
-    override fun solve(terminationCriteria: TerminationCriteria, seed: List<DoubleArray>?): MLResult {
+    override fun getParameterLimits(): List<MLRange> {
+        return listOf(
+                MLRange(10.0, 100.0), //popSize
+                MLRange(0.1, 1.0), //F
+                MLRange(0.1,1.0) //CR
+        )
+    }
+
+
+    override fun solve(problem: Problem, terminationCriteria: TerminationCriteria): MLResult {
 
         var t: Long
         val t0 = System.currentTimeMillis()
 
         var numit = 0
 
-        generatePopulation(seed)
-        evaluateAndUpdate(pop)
+        generatePopulation(problem.dimensionality)
+        problem.evaluateAndUpdate(pop)
 
         var best: MLCandidate?
-        val sample = MLCandidate.randomCandidate(problemDimensionality)
+        val sample = MLCandidate.randomCandidate(problem.dimensionality)
 
         do {
 
@@ -100,16 +93,16 @@ class DEAlgorithm(
                     c3 = pop[random.nextInt(pop.size)]
                 } while (c3 === c || c3 === c1 || c3 === c2)
 
-                val R = random.nextInt(problemDimensionality) + 1
+                val R = random.nextInt(problem.dimensionality) + 1
                 for (j in 0 until sample.size()) {
                     if (random.nextDouble() < CR || j == R) {
-                        sample[j] = MLUtil.clamp(c1[j] + F * (c2[j] - c3[j]), 0.0, 1.0)
+                        sample[j] = (c1[j] + F * (c2[j] - c3[j])).clamp(0.0, 1.0)
                     } else {
                         sample[j]= c[j]
                     }
 
                 }
-                val cost = evaluate(sample.candidate)
+                val cost = problem.evaluate(sample.candidate)
                 sample.cost = cost
                 if (cost < c.cost) {
                     c.copy(sample)
@@ -118,18 +111,13 @@ class DEAlgorithm(
             numit++
             best = getBestFrom(pop)
             t = System.currentTimeMillis() - t0
-        } while (!terminationCriteria.test(TerminationData(best!!.cost, numit, t)))
+        } while (!terminationCriteria.test(IterationDataImpl(best!!.cost, numit, t)))
 
-        return MLResult(denormalizeSolution(best), t, numit)
+        return getResult(best, problem, numit, t)
     }
 
-    private fun generatePopulation(seed: List<DoubleArray>?) {
-        pop.clear()
-        if (seed != null) {
-            for (s in seed) {
-                pop.add(MLCandidate(s))
-            }
-        }
+    private fun generatePopulation(problemDimensionality: Int) {
+        pop = ArrayList(popSize)
         while (pop.size != popSize) {
             pop.add(MLCandidate.randomCandidate(problemDimensionality))
         }

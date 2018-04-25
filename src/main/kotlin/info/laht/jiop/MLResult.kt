@@ -5,12 +5,17 @@
  */
 package info.laht.jiop
 
+import java.util.*
+
 /**
  *
  * @author Lars Ivar Hatledal
  */
 class MLResult(
-        candidate: MLCandidate,
+
+        val result: DoubleArray,
+
+        val cost: Double,
         /**
         * Get the solve time
         * @return how long it took to get this result (in millis)
@@ -23,25 +28,9 @@ class MLResult(
        val numIterations: Int
 ) {
 
-    private val result: MLCandidate = candidate.copy()
-
-    /**
-     * Get the cost
-     * @return the cost of the solution
-     */
-    val cost: Double
-        get() = result.cost
-
-    /**
-     * Get the result
-     * @return the result of the computation
-     */
-    fun getResult(): DoubleArray {
-        return result.candidate
-    }
 
     override fun toString(): String {
-        return "MLResult{" + "numIt=" + numIterations + ", result=" + result + ", solveTime=" + solveTime + '}'.toString()
+        return "MLResult{" +"cost=$cost, numIt=" + numIterations + ", result=" + Arrays.toString(result) + ", solveTime=" + solveTime + '}'
     }
 
 }

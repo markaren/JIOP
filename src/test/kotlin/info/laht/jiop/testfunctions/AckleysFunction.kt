@@ -23,14 +23,14 @@
  */
 package info.laht.jiop.testfunctions
 
-import info.laht.jiop.MLEvaluator
+import info.laht.jiop.Problem
 import info.laht.jiop.MLRange
 
 /**
  *
  * @author Lars Ivar Hatledal
  */
-class AckleysFunction : MLEvaluator(2, MLRange(-5.0, 5.0)) {
+class AckleysFunction : Problem(2, MLRange(-5.0, 5.0)) {
 
     override fun evaluate(candidate: DoubleArray): Double {
         val denormalize = denormalize(candidate)

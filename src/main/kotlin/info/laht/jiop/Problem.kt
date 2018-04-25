@@ -23,17 +23,48 @@
  */
 package info.laht.jiop
 
-import info.laht.jiop.termination.TerminationCriteria
+import java.io.Serializable
 
 /**
  *
  * @author Lars Ivar Hatledal
  */
-interface Solver {
+abstract class Problem(
+        val dimensionality: Int,
+        private val ranges: List<MLRange>
+) : Serializable {
 
-    val name: String
+    var parallel = true
 
-    fun solve(terminationCriteria: TerminationCriteria): MLResult = solve(terminationCriteria, null)
-    fun solve(terminationCriteria: TerminationCriteria, seed: List<DoubleArray>? = null): MLResult
+    constructor(problemDimensionality: Int, range: MLRange): this(problemDimensionality, List(problemDimensionality, {range}))
 
+    fun normalize(candidate: DoubleArray): DoubleArray {
+
+        val result = DoubleArray(dimensionality)
+        for (i in 0 until dimensionality) {
+            result[i] = ranges[i].normalize(candidate[i])
+        }
+        return result
+
+    }
+
+    fun denormalize(candidate: DoubleArray): DoubleArray {
+
+        val result = DoubleArray(dimensionality)
+        for (i in 0 until dimensionality) {
+            result[i] = ranges[i].denormalize(candidate[i])
+        }
+        return result
+
+    }
+
+    fun evaluateAndUpdate(candidates: List<MLCandidate>) {
+
+        parallel.let {
+            if (it) candidates.parallelStream() else candidates.stream()
+        }.forEach{ c: MLCandidate -> c.cost = evaluate(c.candidate) }
+
+    }
+
+    abstract fun evaluate(candidate: DoubleArray): Double
 }

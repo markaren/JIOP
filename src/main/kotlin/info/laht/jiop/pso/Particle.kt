@@ -25,7 +25,8 @@ package info.laht.jiop.pso
 
 import java.util.*
 import info.laht.jiop.MLCandidate
-import info.laht.jiop.MLUtil
+import info.laht.jiop.clamp
+import info.laht.jiop.randomArrayd
 
 /**
  *
@@ -57,7 +58,7 @@ class Particle(
 
     init {
         this.localBestPosition = candidate.copy()
-        this.velocity = MLUtil.randomArrayd(candidate.size(), -1.0, 1.0)
+        this.velocity = randomArrayd(candidate.size(), -1.0, 1.0)
     }
 
     override fun update(omega: Double, c1: Double, c2: Double, globalBestPosition: DoubleArray) {
@@ -66,12 +67,11 @@ class Particle(
             val r2 = rng.nextDouble()
 
             // update velocity
-            velocity[i] = MLUtil.clamp(
-                    velocity[i] * omega
+            velocity[i] = (velocity[i] * omega
                             + c1 * r1 * (localBestPosition!!.get(i) - get(i))
-                            + c2 * r2 * (globalBestPosition[i] - get(i)), lowerVel, upperVel)
+                            + c2 * r2 * (globalBestPosition[i] - get(i))).clamp(lowerVel, upperVel)
 
-            set(i, MLUtil.clamp(get(i) + velocity[i], 0.0, 1.0))
+            set(i, (get(i) + velocity[i]).clamp(0.0, 1.0))
         }
     }
 
@@ -82,13 +82,12 @@ class Particle(
             val r3 = rng.nextDouble()
 
             // update velocity
-            velocity[i] = MLUtil.clamp(
-                    velocity[i] * omega
+            velocity[i] = (velocity[i] * omega
                             + c1 * r1 * (localBestPosition!!.get(i) - get(i))
                             + c2 * r2 * (swarmBestPosition[i] - get(i))
-                            + c3 * r3 * (globalBestPosition[i] - get(i)), lowerVel, upperVel)
+                            + c3 * r3 * (globalBestPosition[i] - get(i))).clamp(lowerVel, upperVel)
 
-            set(i, MLUtil.clamp(get(i) + velocity[i], 0.0, 1.0))
+            set(i, (get(i) + velocity[i]).clamp(0.0, 1.0))
         }
     }
 }

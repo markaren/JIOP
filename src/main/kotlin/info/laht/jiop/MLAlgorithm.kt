@@ -31,16 +31,12 @@ import java.util.Random
  * @author Lars Ivar Hatledal
  */
 abstract class MLAlgorithm(
-        override val name: String,
-        val eval: MLEvaluator
-) : Solver {
+        override val name: String
+) : ProblemSolver {
 
-    val random = Random()
+    protected val random = Random()
 
-    val problemDimensionality: Int
-        get() = eval.problemDimensionality
-
-    protected fun getBestFrom(candidates: Collection<out MLCandidate>): MLCandidate {
+    protected fun getBestFrom(candidates: Collection<MLCandidate>): MLCandidate {
 
         var best: MLCandidate? = null
         for (c in candidates) {
@@ -53,20 +49,13 @@ abstract class MLAlgorithm(
         return best!!
     }
 
-    fun evaluate(candidate: DoubleArray): Double {
-        return eval.evaluate(candidate)
-    }
-
-    fun evaluate(candidate: MLCandidate): Double {
-        return eval.evaluate(candidate.candidate)
-    }
-
-    fun evaluateAndUpdate(candidates: List<MLCandidate>) {
-        eval.evaluateAndUpdate(candidates)
-    }
-
-    fun denormalizeSolution(candidate: MLCandidate): MLCandidate {
-        return eval.denormalizeSolution(candidate)
+    protected fun getResult(candidate: MLCandidate, problem: Problem, numIt: Int, t: Long): MLResult {
+        return MLResult(
+                result = problem.denormalize(candidate.candidate),
+                cost = candidate.cost,
+                numIterations = numIt,
+                solveTime = t
+        )
     }
 
 }

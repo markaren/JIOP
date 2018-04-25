@@ -23,22 +23,29 @@
  */
 package info.laht.jiop.testfunctions
 
-import info.laht.jiop.MLEvaluator
+import info.laht.jiop.Problem
 import info.laht.jiop.MLRange
 
 /**
+ * In mathematical optimization, the Rastrigin function is a non-convex function used
+ * as a performance test problem for optimization algorithms.
+ * It is a typical example of non-linear multimodal function.
+ * It was first proposed by Rastrigin as a 2-dimensional function and has been generalized by Mühlenbein et al.
+ * Finding the minimum of this function is a fairly difficult problem due to its large search space and its large number of local minima.
  *
  * @author Lars Ivar Hatledal
  */
-class RastriginFunction(dim: Int) : MLEvaluator(dim, MLRange(-5.12, 5.12)) {
+class RastriginFunction(
+        dimension: Int
+) : Problem(dimension, MLRange(-5.12, 5.12)) {
 
     override fun evaluate(candidate: DoubleArray): Double {
 
         val denormalize = denormalize(candidate)
 
         val A = 10.0
-        var cost = A * problemDimensionality
-        for (i in 0 until problemDimensionality) {
+        var cost = A * dimensionality
+        for (i in 0 until dimensionality) {
             val x = denormalize[i]
             cost += x * x - A * Math.cos(2.0 * Math.PI * x)
         }

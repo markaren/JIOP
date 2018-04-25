@@ -23,16 +23,17 @@
  */
 package info.laht.jiop
 
-import java.util.ArrayList
-import java.util.Arrays
 import info.laht.jiop.de.DEAlgorithm
+import info.laht.jiop.ga.DoubleArrayMutation
 import info.laht.jiop.ga.GAAlgorithm
+import info.laht.jiop.ga.StochasticUniversalSampling
 import info.laht.jiop.pso.MSOAlgorithm
 import info.laht.jiop.pso.PSOAlgorithm
 import info.laht.jiop.termination.TerminationCriteria
-import info.laht.jiop.termination.TerminationData
-import info.laht.jiop.testfunctions.AckleysFunction
+import info.laht.jiop.termination.IterationData
 import info.laht.jiop.testfunctions.RastriginFunction
+import info.laht.jiop.tuning.AlgorithmOptimizer
+import info.laht.jiop.tuning.Optimizable
 
 /**
  *
@@ -46,33 +47,45 @@ object TestML {
         val func = RastriginFunction(10)
 
         val algorithms = listOf(
-                PSOAlgorithm.Builder(func)
-                        .swarmSize(40)
-                        .omega(0.9)
-                        .c1(2.0)
-                        .c2(0.1).build(),
-                DEAlgorithm.Builder(func)
-                        .popSize(40)
-                        .F(0.9)
-                        .CR(0.8).build(),
-                MSOAlgorithm.Builder(func)
-                        .numSwarms(4)
-                        .swarmSize(30)
-                        .omega(0.9)
-                        .c1(1.41)
-                        .c2(1.41)
-                        .c3(1.41).build(),
-                GAAlgorithm.Builder(func)
-                        .popSize(60)
-                        .elitism(0.1)
-                        .selectionRate(0.5)
-                        .mutationRate(0.2).build())
+                PSOAlgorithm(
+                        swarmSize = func.dimensionality*2,
+                        omega = 0.8,
+                        c1 = 1.41,
+                        c2 = 1.41),
+                MSOAlgorithm(
+                        numSwarms = 3,
+                        swarmSize = func.dimensionality*3,
+                        omega = 0.9,
+                        c1 = 1.41,
+                        c2 = 1.41,
+                        c3 = 0.41),
+                DEAlgorithm(
+                        popSize = func.dimensionality*3,
+                        F = 0.9,
+                        CR = 0.8),
+                GAAlgorithm(
+                        popSize = func.dimensionality*2,
+                        elitism = 0.1,
+                        selectionRate = 0.5,
+                        mutationRate = 0.1,
+                        mutation = DoubleArrayMutation(0.1),
+                        selection = StochasticUniversalSampling())
+        )
 
-        for (a in algorithms) {
-            val solve = a.solve(TerminationCriteria.of { data: TerminationData -> data.bestCost == 0.0 || data.timeElapsed > 1000 })
-            println("${a.name}: $solve")
+//        AlgorithmOptimizer(DEAlgorithm(), algorithms[0] as Optimizable).apply {
+//            optimize(func, 10000)
+//        }
+//        AlgorithmOptimizer(DEAlgorithm(), algorithms[2] as Optimizable).apply {
+//            optimize(func, 1000)
+//        }
+        AlgorithmOptimizer(DEAlgorithm(), algorithms[3] as Optimizable).apply {
+            optimize(func, 10000)
         }
 
+        for (a in algorithms) {
+            val solve = a.solve(func, TerminationCriteria.of { it.bestCost == 0.0 || it.timeElapsed > 1000 })
+            println("${a.name}: $solve")
+        }
 
     }
 

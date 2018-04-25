@@ -23,72 +23,60 @@
  */
 package info.laht.jiop.pso
 
+import info.laht.jiop.*
 import java.util.ArrayList
-import info.laht.jiop.MLAlgorithm
-import info.laht.jiop.MLCandidate
-import info.laht.jiop.MLEvaluator
-import info.laht.jiop.MLResult
 import info.laht.jiop.termination.TerminationCriteria
-import info.laht.jiop.termination.TerminationData
+import info.laht.jiop.termination.IterationDataImpl
+import info.laht.jiop.tuning.Optimizable
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  *
  * @author Lars Ivar Hatledal
  */
 class PSOAlgorithm (
-        evaluator: MLEvaluator,
         private var swarmSize: Int = 30,
         private var omega: Double = 0.9,
         private var c1: Double = 1.41,
         private var c2: Double = 1.41
-) : MLAlgorithm("PSO", evaluator) {
+) : MLAlgorithm("PSO"), Optimizable {
 
-    private val swarm: MutableList<Particle> = ArrayList(swarmSize)
+    companion object {
+        val LOG: Logger = LoggerFactory.getLogger(PSOAlgorithm::class.java)
+    }
 
-    class Builder(
-            private val evaluator: MLEvaluator
-    ) {
+    private lateinit var swarm: MutableList<Particle>
 
-        private var swarmSize = 30
-        private var omega = 0.9
-        private var c1 = 1.41
-        private var c2 = 1.41
+    override val numberOfFreeParameters: Int = 4
 
-        fun swarmSize(`val`: Int): Builder {
-            this.swarmSize = `val`
-            return this
-        }
+    override fun setFreeParameters(params: DoubleArray) {
 
-        fun omega(`val`: Double): Builder {
-            this.omega = `val`
-            return this
-        }
-
-        fun c1(`val`: Double): Builder {
-            this.c1 = `val`
-            return this
-        }
-
-        fun c2(`val`: Double): Builder {
-            this.c2 = `val`
-            return this
-        }
-
-        fun build(): PSOAlgorithm {
-            return PSOAlgorithm(evaluator, swarmSize, omega, c1, c2)
-        }
+        swarmSize = params[0].toInt()
+        omega = params[1]
+        c1 = params[2]
+        c2 = params[3]
 
     }
 
-    override fun solve(terminationCriteria: TerminationCriteria, seed: List<DoubleArray>?): MLResult {
+    override fun getParameterLimits(): List<MLRange> {
+        return listOf(
+                MLRange(10.0, 100.0), //swarmSize
+                MLRange(0.1, 0.5), //omega
+                MLRange(0.1,2.0), //c1
+                MLRange(0.1,2.0) //c2
+        )
+    }
+
+    override fun solve(problem: Problem, terminationCriteria: TerminationCriteria): MLResult {
 
         var t: Long
         val t0 = System.currentTimeMillis()
 
         var numit = 0
 
-        generateSwarm(seed)
-        evaluateAndUpdate(swarm)
+        generateSwarm(problem.dimensionality)
+        problem.evaluateAndUpdate(swarm)
 
         var gBest: Particle = getBestFrom(swarm) as Particle
 
@@ -97,7 +85,7 @@ class PSOAlgorithm (
             for (p in swarm) {
                 if (p !== gBest) {
                     p.update(omega, c1, c2, gBest.candidate)
-                    val cost = evaluate(p.candidate)
+                    val cost = problem.evaluate(p.candidate)
                     p.cost = cost
                     if (cost < gBest.cost) {
                         gBest = p
@@ -106,19 +94,13 @@ class PSOAlgorithm (
             }
             numit++
             t = System.currentTimeMillis() - t0
-        } while (!terminationCriteria.test(TerminationData(gBest.cost, numit, t)))
+        } while (!terminationCriteria.test(IterationDataImpl(gBest.cost, numit, t)))
 
-        return MLResult(denormalizeSolution(gBest), t, numit)
+        return getResult(gBest, problem, numit, t)
     }
 
-    private fun generateSwarm(seed: List<DoubleArray>?) {
-        swarm.clear()
-        if (seed != null) {
-            for (s in seed) {
-                swarm.add(Particle(MLCandidate(s)))
-            }
-        }
-
+    private fun generateSwarm(problemDimensionality: Int) {
+        swarm = ArrayList(swarmSize)
         while (swarm.size != swarmSize) {
             swarm.add(Particle(MLCandidate.randomCandidate(problemDimensionality)))
         }

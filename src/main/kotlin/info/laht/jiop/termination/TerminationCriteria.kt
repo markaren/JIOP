@@ -24,7 +24,6 @@
 package info.laht.jiop.termination
 
 
-
 /**
  *
  * @author Lars Ivar Hatledal
@@ -32,13 +31,13 @@ package info.laht.jiop.termination
 @FunctionalInterface
 interface TerminationCriteria {
 
-    fun test(data: TerminationData): Boolean
+    fun test(data: IterationData): Boolean
 
     companion object {
 
-        fun of (predicate: (data: TerminationData) -> Boolean): TerminationCriteria {
+        fun of (predicate: (data: IterationData) -> Boolean): TerminationCriteria {
             return object : TerminationCriteria {
-                override fun test(data: TerminationData): Boolean {
+                override fun test(data: IterationData): Boolean {
                     return predicate.invoke(data)
                 }
             }
@@ -55,7 +54,7 @@ interface TerminationCriteria {
  */
 class IterationTerminationCriteria(private val numIterations: Int) : TerminationCriteria {
 
-    override fun test(data: TerminationData): Boolean {
+    override fun test(data: IterationData): Boolean {
         return numIterations <= data.numIterations
     }
 
@@ -67,7 +66,7 @@ class IterationTerminationCriteria(private val numIterations: Int) : Termination
  */
 class CostTerminationCriteria(val targetCost: Double) : TerminationCriteria {
 
-    override fun test(data: TerminationData): Boolean {
+    override fun test(data: IterationData): Boolean {
         return targetCost <= data.bestCost
     }
 
@@ -79,7 +78,7 @@ class CostTerminationCriteria(val targetCost: Double) : TerminationCriteria {
  */
 class TimeElapsedTerminationCriteria(private val maxSolveTime: Long) : TerminationCriteria {
 
-    override fun test(data: TerminationData): Boolean {
+    override fun test(data: IterationData): Boolean {
         return maxSolveTime <= data.timeElapsed
     }
 

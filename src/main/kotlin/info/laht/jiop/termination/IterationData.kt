@@ -23,12 +23,19 @@
  */
 package info.laht.jiop.termination
 
+
+interface IterationData {
+    val bestCost: Double
+    val numIterations: Int
+    val timeElapsed: Long
+}
+
 /**
  *
  * @author Lars Ivar Hatledal
  */
-data class TerminationData(
-        val bestCost: Double,
-        val numIterations: Int,
-        val timeElapsed: Long
-)
+data class IterationDataImpl(
+        override var bestCost: Double,
+        override var numIterations: Int,
+        override val timeElapsed: Long
+): IterationData

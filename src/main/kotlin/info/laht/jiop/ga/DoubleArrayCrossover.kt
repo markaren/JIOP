@@ -85,8 +85,8 @@ class DoubleArrayCrossover : CrossoverOperator {
 
             val beta = rng.nextDouble()
 
-            offspring1.set(i, beta * ma.get(i) + (1 - beta) * pa.get(i))
-            offspring2.set(i, (1 - beta) * ma.get(i) + beta * pa.get(i))
+            offspring1[i] = beta * ma[i] + (1 - beta) * pa[i]
+            offspring2[i] = (1 - beta) * ma[i] + beta * pa[i]
 
         }
 

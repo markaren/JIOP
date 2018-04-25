@@ -23,46 +23,15 @@
  */
 package info.laht.jiop
 
-import java.io.Serializable
+import info.laht.jiop.termination.TerminationCriteria
 
 /**
  *
  * @author Lars Ivar Hatledal
  */
-abstract class MLEvaluator(
-        val problemDimensionality: Int,
-        private val ranges: List<MLRange>
-) : Serializable {
+interface ProblemSolver {
 
-    constructor(problemDimensionality: Int, range: MLRange): this(problemDimensionality, List(problemDimensionality, {range}))
+    val name: String
+    fun solve(problem: Problem, terminationCriteria: TerminationCriteria): MLResult
 
-    fun normalize(candidate: DoubleArray): DoubleArray {
-
-        val result = DoubleArray(problemDimensionality)
-        for (i in 0 until problemDimensionality) {
-            result[i] = ranges[i].normalize(candidate[i])
-        }
-        return result
-
-    }
-
-    fun denormalize(candidate: DoubleArray): DoubleArray {
-
-        val result = DoubleArray(problemDimensionality)
-        for (i in 0 until problemDimensionality) {
-            result[i] = ranges[i].denormalize(candidate[i])
-        }
-        return result
-
-    }
-
-    fun denormalizeSolution(candidate: MLCandidate): MLCandidate {
-        return MLCandidate(denormalize(candidate.candidate), candidate.cost)
-    }
-
-    fun evaluateAndUpdate(candidates: List<MLCandidate>) {
-        candidates.parallelStream().forEach { c: MLCandidate -> c.cost = evaluate(c.candidate) }
-    }
-
-    abstract fun evaluate(candidate: DoubleArray): Double
 }

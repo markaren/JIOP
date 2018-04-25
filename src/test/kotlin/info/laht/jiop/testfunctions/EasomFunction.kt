@@ -23,14 +23,14 @@
  */
 package info.laht.jiop.testfunctions
 
-import info.laht.jiop.MLEvaluator
+import info.laht.jiop.Problem
 import info.laht.jiop.MLRange
 
 /**
  *
  * @author Lars Ivar Hatledal
  */
-class EasomFunction : MLEvaluator(2, MLRange(-100.0, 100.0)) {
+class EasomFunction : Problem(2, MLRange(-100.0, 100.0)) {
 
     override fun evaluate(candidate: DoubleArray): Double {
         val denormalize = denormalize(candidate)

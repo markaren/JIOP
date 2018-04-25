@@ -25,19 +25,26 @@ package info.laht.jiop.ga
 
 import java.util.Random
 import info.laht.jiop.MLCandidate
+import info.laht.jiop.clamp
+import info.laht.jiop.randomRange
 
 /**
  *
  * @author Lars Ivar Hatledal
  */
-class DoubleArrayMutation : MutationOperator {
+class DoubleArrayMutation(
+        val factor: Double = 0.25
+) : MutationOperator {
 
     override fun mutate(candidates: List<MLCandidate>, numMutation: Int, rng: Random) {
 
         for (i in 0 until numMutation) {
             val row = rng.nextInt(candidates.size)
-            val col = rng.nextInt(candidates[0].size())
-            candidates[row].set(col, rng.nextDouble())
+            val candidate = candidates[row]
+            val col = rng.nextInt(candidate.size())
+            val currentValue = candidate[col]
+            val newValue = randomRange(currentValue-factor, currentValue+factor).clamp(0.0, 1.0)
+            candidate[col] = newValue
         }
     }
 }

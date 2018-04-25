@@ -34,4 +34,16 @@ interface SelectionOperator {
 
     fun select(population: List<MLCandidate>, selectionSize: Int, rng: Random): List<MLCandidate>
 
+    companion object {
+
+        fun getAdjustedFitness(rawFitness: Double): Double {
+            return if (rawFitness == 0.0) {
+                Double.POSITIVE_INFINITY
+            } else {
+                1.0 / rawFitness
+            }
+        }
+
+    }
+
 }
